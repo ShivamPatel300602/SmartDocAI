@@ -4,12 +4,11 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import google.generativeai as genai
-from langchain.vectorstores import FAISS
+from langchain.vectorstores.faiss import FAISS  # Adjusted import path
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
-
 
 load_dotenv()
 os.getenv("GOOGLE_API_KEY")
@@ -30,7 +29,7 @@ def get_chunks(text):
 
 def get_vector_store(text_chunks):
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-    vector_store = FAISS.from_texts(texts = text_chunks, embedding = embeddings)
+    vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     vector_store.save_local("faiss_index")
 
 def get_conversational_chain():
@@ -41,8 +40,8 @@ def get_conversational_chain():
     Answer:
     """
     model = ChatGoogleGenerativeAI(model="gemini-pro", temprecture=0.3)
-    prompt = PromptTemplate(template=prompt_template, input_variables = ['context', 'question'])
-    chain = load_qa_chain(model, chain_type="stuff", prompt = prompt)
+    prompt = PromptTemplate(template=prompt_template, input_variables=['context', 'question'])
+    chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
     return chain
 
 def user_input(user_question):
@@ -51,9 +50,7 @@ def user_input(user_question):
     docs = new_db.similarity_search(user_question)
     chain = get_conversational_chain()
 
-    response = chain(
-        {"input_documents":docs, "question": user_question}
-        , return_only_outputs=True)
+    response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
 
     print(response)
     st.write("Reply: ", response["output_text"])
@@ -72,7 +69,7 @@ def main():
         pdf_docs = st.file_uploader("Upload your PDF Files and Click on the Submit & Process Button", accept_multiple_files=True)
         if st.button("Submit & Process"):
             with st.spinner("Processing..."):
-                raw_text = get_pdf_text(pdf_docs)   
+                raw_text = get_pdf_text(pdf_docs)
                 text_chunks = get_chunks(raw_text)
                 get_vector_store(text_chunks)
                 st.success("Done")
